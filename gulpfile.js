@@ -9,13 +9,15 @@ const terser = require('gulp-terser-js');
 const postcss = require('gulp-postcss');
 const autoprefixer = require('autoprefixer');
 const cssnano = require('cssnano');
+const imagemin = require('gulp-imagemin');
 var replace = require('gulp-replace');
 
 
 // File paths
 const files = { 
     scssPath: 'app/scss/**/*.scss',
-    jsPath: 'app/js/**/*.js'
+    jsPath: 'app/js/**/*.js',
+    imgPath: 'app/images/**/*'
 }
 
 // Sass task: compiles the style.scss file into style.css
@@ -49,13 +51,22 @@ function cacheBustTask(){
         .pipe(dest('.'));
 }
 
+//Imagemin
+function imgMinifiedTask() {
+    return src([
+        files.imgPath
+        ])
+    .pipe(imagemin())
+    .pipe(dest("dist/images/"));
+    }
+
 // Watch task: watch SCSS and JS files for changes
 // If any change, run scss and js tasks simultaneously
 function watchTask(){
-    watch([files.scssPath, files.jsPath],
+    watch([files.scssPath, files.jsPath, files.imgPath],
         {interval: 1000, usePolling: true}, //Makes docker work
         series(
-            parallel(scssTask, jsTask),
+            parallel(scssTask, jsTask, imgMinifiedTask),
             cacheBustTask
         )
     );    
@@ -65,7 +76,7 @@ function watchTask(){
 // Runs the scss and js tasks simultaneously
 // then runs cacheBust, then watch task
 exports.default = series(
-    parallel(scssTask, jsTask), 
+    parallel(scssTask, jsTask, imgMinifiedTask), 
     cacheBustTask,
     watchTask
 );
